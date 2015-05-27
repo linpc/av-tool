@@ -1,0 +1,86 @@
+#!/bin/sh
+
+usage()
+{
+    echo 'Usage:'
+    echo "    $0"
+
+# -frame-rate / fps
+# -resolution
+# -image-format
+# -generate-video
+}
+
+get_video_length()
+{
+    local video=$1
+
+    local vinfo=$(ffmpeg -i $video 2>&1)
+    local dr="${vinfo#*Duration: }"
+
+    local time=${dr%%,*}
+
+    # time='12:34:56.78'
+    local hour=${time%%:*}
+    local min=${time#*:}
+    min=${min%%:*}
+    local sec=${time##*:}
+    sec=${sec%.*}
+    local msec=${time##*.}
+
+    echo $(($hour*60*60 + $min*60 + $sec))
+}
+
+screenshot_video()
+{
+    local video=$1
+
+    local length=`get_video_length $video`
+
+    local pos=0
+    local counter=1
+
+    # The performance of ffmpeg native-processing is not very good
+    # try to handle the split time slot manually
+    while [ $pos -le $length ]; do
+        local filename=`printf 'shot-%05d.png' $counter`
+        echo $filename
+
+        ffmpeg -y -loglevel quiet -ss $pos -t 1 -i $video -f mjpeg $filename
+
+        pos=$(($pos + 10))
+        counter=$(($counter + 1))
+    done
+
+    rm -f *.jpg
+    # ffmpeg native-processing method
+    ##ffmpeg -y -loglevel quiet -i $video -r 0.5 -s 800x600 -f image2 foo-%05d.jpg
+
+    # construct timeslice video from images
+    ffmpeg -y -loglevel quiet -f image2 -pattern_type glob -i 'foo-*.jpg' -r 7 -s 800x600 shot-${video}
+}
+
+opt_handle()
+{
+    while getopts h op
+    do
+        case ${op} in
+            *|h)
+                usage
+                exit 0
+                ;;
+            esac
+    done
+}
+
+main()
+{
+    opt_handle $@
+    shift $((${OPTIND} - 1))
+
+    screenshot_video $1
+
+    exit 0
+}
+
+main $@
