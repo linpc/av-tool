@@ -31,7 +31,7 @@ get_video_length()
     echo $(($hour*60*60 + $min*60 + $sec))
 }
 
-screenshot_video()
+make_video_screenshot()
 {
     local video=$1
 
@@ -78,7 +78,7 @@ main()
     opt_handle $@
     shift $((${OPTIND} - 1))
 
-    screenshot_video $1
+    make_video_screenshot $1
 
     exit 0
 }
