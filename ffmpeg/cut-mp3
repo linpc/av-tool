@@ -1,0 +1,9 @@
+#!/bin/sh
+
+start_time='00:00:01.00'
+duration='00:00:30.00'
+
+input='input-file.mp3'
+output='output-file.mp3'
+
+ffmpeg -i ${input} -acodec copy -ss ${start_time} -t ${duration} ${output}
