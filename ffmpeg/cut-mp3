@@ -1,9 +1,78 @@
 #!/bin/sh
 
-start_time='00:00:01.00'
-duration='00:00:30.00'
+start_time=''
+duration=''
 
-input='input.mp3'
-output='output.mp3'
+input=''
+output=''
 
-ffmpeg -i ${input} -acodec copy -ss ${start_time} -t ${duration} ${output}
+force_override_output=0
+
+usage()
+{
+    echo 'Usage:'
+    echo "    $0 -s <start ts> -t <duration> -i <input> -o <output>"
+
+    # start_time='00:00:01.00'
+    # duration='00:00:30.00'
+}
+
+cut_mp3()
+{
+    ffmpeg -i ${input} -acodec copy -ss ${start_time} -t ${duration} ${output}
+}
+
+opt_handle()
+{
+    while getopts i:o:s:t:fh op
+    do
+        case ${op} in
+            i)
+                input=${OPTARG}
+                ;;
+            o)
+                output=${OPTARG}
+                ;;
+            s)
+                start_time=${OPTARG}
+                ;;
+            t)
+                duration=${OPTARG}
+                ;;
+            f)
+                force_override_output=1
+                ;;
+            *|h)
+                usage
+                exit 0
+                ;;
+            esac
+    done
+}
+
+main()
+{
+    opt_handle $@
+    shift $((${OPTIND} - 1))
+
+    if [ ! -f "$input" ]; then
+        echo 'Error: input file not exists.'
+        exit 1
+    fi
+
+    if [ -f "$output" -a ${force_override_output} -ne 1 ]; then
+        echo 'Error: output file already exists. Add "-f" to force overwrite it'
+        exit 1
+    fi
+
+    if [ "$input" = "$output" ]; then
+        echo 'Error: input and output file could not be the same.'
+        exit 1
+    fi
+
+    cut_mp3
+
+    exit 0
+}
+
+main $@
