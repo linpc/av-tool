@@ -7,11 +7,12 @@ input=''
 output=''
 
 force_override_output=0
+be_quiet=0
 
 usage()
 {
     echo 'Usage:'
-    echo "    $0 -s <start ts> -t <duration> -i <input> -o <output>"
+    echo "    $0 [-qf] -s <start ts> -t <duration> -i <input> -o <output>"
 
     # start_time='00:00:01.00'
     # duration='00:00:30.00'
@@ -19,12 +20,16 @@ usage()
 
 cut_mp3()
 {
-    ffmpeg -i ${input} -acodec copy -ss ${start_time} -t ${duration} ${output}
+    local args=''
+    if [ $be_quiet -eq 1 ]; then
+        args="${args} -loglevel quiet"
+    fi
+    ffmpeg ${args} -i ${input} -acodec copy -ss ${start_time} -t ${duration} ${output}
 }
 
 opt_handle()
 {
-    while getopts i:o:s:t:fh op
+    while getopts i:o:s:t:fqh op
     do
         case ${op} in
             i)
@@ -41,6 +46,9 @@ opt_handle()
                 ;;
             f)
                 force_override_output=1
+                ;;
+            q)
+                be_quiet=1
                 ;;
             *|h)
                 usage
